@@ -85,13 +85,10 @@ pipeline {
                         
                         # Show container logs for debugging
                         echo "Container logs:"
-                        docker logs --tail 50 app
+                        docker logs --tail 20 app
                         
-                        # Extract the generated password from logs
-                        GENERATED_PASSWORD=$(docker logs app | grep "Using generated security password:" | tail -n 1 | awk '{print $NF}')
-                        
-                        # Try to connect to the application with the generated password
-                        if curl -s -f -u "user:${GENERATED_PASSWORD}" http://localhost:${BACKEND_PORT}/actuator/health > /dev/null; then
+                        # Try to connect to the application without authentication
+                        if curl -s -f http://localhost:${BACKEND_PORT}/actuator/health > /dev/null; then
                             echo "Backend is ready!"
                             break
                         fi
