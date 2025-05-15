@@ -1,0 +1,38 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:14.18
+    environment:
+      - POSTGRES_DB=${RDS_DB_NAME:-jenkinsdb}
+      - POSTGRES_USER=${RDS_USERNAME:-jenkins_admin}
+      - POSTGRES_PASSWORD=${RDS_PASSWORD:-your_secure_password_here}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Spring Boot Application
+  app:
+    build:
+      context: ..
+      dockerfile: ci/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${RDS_DB_NAME:-jenkinsdb}
+      - SPRING_DATASOURCE_USERNAME=${RDS_USERNAME:-jenkins_admin}
+      - SPRING_DATASOURCE_PASSWORD=${RDS_PASSWORD:-your_secure_password_here}
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data: 
