@@ -83,23 +83,35 @@ pipeline {
                         -e CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS} \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
 
+                    # Give the application some time to start
+                    echo "Waiting for application to initialize..."
+                    sleep 30
+
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
                     for i in $(seq 1 30); do
                         echo "Attempt $i: Checking backend health..."
-                        response=$(curl -s http://localhost:${BACKEND_PORT}/api/calamity)
-                        echo "Response: $response"
-                        if echo "$response" | grep -q "id"; then
+                        # Check if container is running
+                        if ! docker ps | grep -q backend; then
+                            echo "Backend container is not running. Checking logs:"
+                            docker logs backend
+                            exit 1
+                        fi
+                        
+                        # Try to connect to the application
+                        if curl -s -f http://localhost:${BACKEND_PORT}/api/calamity > /dev/null; then
                             echo "Backend is ready!"
                             break
                         fi
+                        
                         if [ $i -eq 30 ]; then
-                            echo "Backend failed to start within timeout"
-                            echo "Last response was: $response"
+                            echo "Backend failed to start within timeout. Container logs:"
+                            docker logs backend
                             exit 1
                         fi
+                        
                         echo "Backend not ready yet, waiting..."
-                        sleep 2
+                        sleep 5
                     done
                 '''
             }
