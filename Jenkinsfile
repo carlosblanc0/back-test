@@ -70,7 +70,7 @@ pipeline {
 
                     # Give the application some time to start
                     echo "Waiting for application to initialize..."
-                    sleep 10
+                    sleep 30
 
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
@@ -85,7 +85,7 @@ pipeline {
                         
                         # Show container logs for debugging
                         echo "Container logs:"
-                        docker logs --tail 20 app
+                        docker logs --tail 50 app
                         
                         # Try to connect to the application
                         if curl -s -f http://localhost:${BACKEND_PORT}/actuator/health > /dev/null; then
@@ -100,7 +100,7 @@ pipeline {
                         fi
                         
                         echo "Backend not ready yet, waiting..."
-                        sleep 5
+                        sleep 10
                     done
                 '''
             }
