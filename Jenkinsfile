@@ -2,18 +2,21 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'agents-of-revature'
+        DOCKER_IMAGE = 'agents-of-revature-backend'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DB_NAME = 'jenkinsdb'
         DB_USER = 'jenkins_admin'
         DB_PASSWORD = 'your_secure_password_here'
         NETWORK_NAME = 'app-network'
+        BACKEND_PORT = '8081'
+        CORS_ALLOWED_ORIGINS = 'http://localhost:8082,http://jenkins-ec2:8082'
     }
 
     stages {
         stage('Build') {
             steps {
                 sh 'echo "Building the application..."'
+                sh 'chmod +x ./mvnw'
                 sh './mvnw clean package -DskipTests'
             }
         }
@@ -36,6 +39,11 @@ pipeline {
             steps {
                 sh 'echo "Deploying the application..."'
                 sh '''
+                    # Stop and remove existing containers
+                    docker stop backend postgres || true
+                    docker rm backend postgres || true
+                    docker network rm ${NETWORK_NAME} || true
+
                     # Create network if it doesn't exist
                     docker network create ${NETWORK_NAME} || true
 
@@ -54,14 +62,29 @@ pipeline {
 
                     # Run the application container
                     docker run -d \
-                        --name app \
+                        --name backend \
                         --network ${NETWORK_NAME} \
-                        -p 8081:8080 \
+                        -p ${BACKEND_PORT}:8080 \
                         -e SPRING_PROFILES_ACTIVE=prod \
                         -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME} \
                         -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
                         -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+                        -e CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS} \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+                    # Wait for backend to be ready
+                    echo "Waiting for backend to be ready..."
+                    for i in {1..30}; do
+                        if curl -s http://localhost:${BACKEND_PORT}/actuator/health | grep -q "UP"; then
+                            echo "Backend is ready!"
+                            break
+                        fi
+                        if [ $i -eq 30 ]; then
+                            echo "Backend failed to start within timeout"
+                            exit 1
+                        fi
+                        sleep 2
+                    done
                 '''
             }
         }
@@ -77,8 +100,8 @@ pipeline {
         always {
             echo 'Cleaning up...'
             sh '''
-                docker stop app postgres || true
-                docker rm app postgres || true
+                docker stop backend postgres || true
+                docker rm backend postgres || true
                 docker network rm ${NETWORK_NAME} || true
                 docker system prune -f
             '''
