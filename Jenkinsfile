@@ -70,7 +70,7 @@ pipeline {
 
                     # Give the application some time to start
                     echo "Waiting for application to initialize..."
-                    sleep 30
+                    sleep 10
 
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
@@ -83,8 +83,12 @@ pipeline {
                             exit 1
                         fi
                         
+                        # Show container logs for debugging
+                        echo "Container logs:"
+                        docker logs --tail 20 app
+                        
                         # Try to connect to the application
-                        if curl -s -f http://localhost:${BACKEND_PORT}/api/calamity > /dev/null; then
+                        if curl -s -f http://localhost:${BACKEND_PORT}/actuator/health > /dev/null; then
                             echo "Backend is ready!"
                             break
                         fi
