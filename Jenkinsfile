@@ -87,11 +87,11 @@ pipeline {
                         echo "Container logs:"
                         docker logs --tail 20 app
                         
-                        # Try to connect to the application using the register endpoint
+                        # Try to connect to the application using the signup endpoint
                         if curl -s -f -X POST \
                             -H "Content-Type: application/json" \
-                            -d '{"username":"testuser","password":"Test123!"}' \
-                            http://localhost:${BACKEND_PORT}/auth/register > /dev/null; then
+                            -d '{"username":"testuser@mail","password":"T@est123!"}' \
+                            http://localhost:${BACKEND_PORT}/auth/signup > /dev/null; then
                             echo "Backend is ready!"
                             break
                         fi
