@@ -62,6 +62,7 @@ pipeline {
                         --network ${NETWORK_NAME} \
                         -p ${BACKEND_PORT}:8081 \
                         -e SPRING_PROFILES_ACTIVE=prod \
+                        -e SERVER_PORT=8081 \
                         -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME} \
                         -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
                         -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
