@@ -87,11 +87,11 @@ pipeline {
                         echo "Container logs:"
                         docker logs --tail 20 app
                         
-                        # Extract the generated password from logs
-                        GENERATED_PASSWORD=$(docker logs app | grep "Using generated security password:" | tail -n 1 | awk '{print $NF}')
-                        
-                        # Try to connect to the application with the generated password
-                        if curl -s -f -u "user:${GENERATED_PASSWORD}" http://localhost:${BACKEND_PORT}/actuator/health > /dev/null; then
+                        # Try to connect to the application using the register endpoint
+                        if curl -s -f -X POST \
+                            -H "Content-Type: application/json" \
+                            -d '{"username":"testuser","password":"Test123!"}' \
+                            http://localhost:${BACKEND_PORT}/auth/register > /dev/null; then
                             echo "Backend is ready!"
                             break
                         fi
