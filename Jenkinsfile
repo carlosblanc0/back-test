@@ -9,7 +9,7 @@ pipeline {
         DB_PASSWORD = 'your_secure_password_here'
         NETWORK_NAME = 'app-network'
         BACKEND_PORT = '8081'
-        CORS_ALLOWED_ORIGINS = 'http://localhost:8082,http://jenkins-ec2:8082'
+        CORS_ALLOWED_ORIGINS = 'http://localhost:8082,http://jenkins-ec2:8082,http://54.167.50.190:8080,http://54.167.50.190:8082'
     }
 
     stages {
@@ -58,7 +58,18 @@ pipeline {
                         postgres:14.18
 
                     # Wait for PostgreSQL to be ready
-                    sleep 10
+                    echo "Waiting for PostgreSQL to be ready..."
+                    for i in $(seq 1 30); do
+                        if docker exec postgres pg_isready; then
+                            echo "PostgreSQL is ready!"
+                            break
+                        fi
+                        if [ $i -eq 30 ]; then
+                            echo "PostgreSQL failed to start within timeout"
+                            exit 1
+                        fi
+                        sleep 2
+                    done
 
                     # Run the application container
                     docker run -d \
@@ -74,8 +85,8 @@ pipeline {
 
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
-                    for i in {1..30}; do
-                        if curl -s http://localhost:${BACKEND_PORT}/actuator/health | grep -q "UP"; then
+                    for i in $(seq 1 30); do
+                        if curl -s http://localhost:${BACKEND_PORT}/api/calamity | grep -q "id"; then
                             echo "Backend is ready!"
                             break
                         fi
@@ -92,19 +103,22 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline completed successfully! Containers are running and accessible.'
+            echo 'Backend is available at: http://54.167.50.190:8081'
+            echo 'PostgreSQL is available at: 54.167.50.190:5432'
         }
         failure {
-            echo 'Pipeline failed!'
-        }
-        always {
-            echo 'Cleaning up...'
+            echo 'Pipeline failed! Cleaning up...'
             sh '''
                 docker stop backend postgres || true
                 docker rm backend postgres || true
                 docker network rm ${NETWORK_NAME} || true
                 docker system prune -f
             '''
+        }
+        always {
+            // Only clean up Docker system, not the containers
+            sh 'docker system prune -f'
         }
     }
 }
