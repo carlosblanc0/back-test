@@ -86,14 +86,19 @@ pipeline {
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
                     for i in $(seq 1 30); do
-                        if curl -s http://localhost:${BACKEND_PORT}/api/calamity | grep -q "id"; then
+                        echo "Attempt $i: Checking backend health..."
+                        response=$(curl -s http://localhost:${BACKEND_PORT}/api/calamity)
+                        echo "Response: $response"
+                        if echo "$response" | grep -q "id"; then
                             echo "Backend is ready!"
                             break
                         fi
                         if [ $i -eq 30 ]; then
                             echo "Backend failed to start within timeout"
+                            echo "Last response was: $response"
                             exit 1
                         fi
+                        echo "Backend not ready yet, waiting..."
                         sleep 2
                     done
                 '''
