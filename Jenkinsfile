@@ -39,11 +39,6 @@ pipeline {
             steps {
                 sh 'echo "Deploying the application..."'
                 sh '''
-                    # Stop and remove existing containers
-                    docker stop backend postgres || true
-                    docker rm backend postgres || true
-                    docker network rm ${NETWORK_NAME} || true
-
                     # Create network if it doesn't exist
                     docker network create ${NETWORK_NAME} || true
 
@@ -59,21 +54,11 @@ pipeline {
 
                     # Wait for PostgreSQL to be ready
                     echo "Waiting for PostgreSQL to be ready..."
-                    for i in $(seq 1 30); do
-                        if docker exec postgres pg_isready; then
-                            echo "PostgreSQL is ready!"
-                            break
-                        fi
-                        if [ $i -eq 30 ]; then
-                            echo "PostgreSQL failed to start within timeout"
-                            exit 1
-                        fi
-                        sleep 2
-                    done
+                    sleep 10
 
                     # Run the application container
                     docker run -d \
-                        --name backend \
+                        --name app \
                         --network ${NETWORK_NAME} \
                         -p ${BACKEND_PORT}:8080 \
                         -e SPRING_PROFILES_ACTIVE=prod \
@@ -92,9 +77,9 @@ pipeline {
                     for i in $(seq 1 30); do
                         echo "Attempt $i: Checking backend health..."
                         # Check if container is running
-                        if ! docker ps | grep -q backend; then
+                        if ! docker ps | grep -q app; then
                             echo "Backend container is not running. Checking logs:"
-                            docker logs backend
+                            docker logs app
                             exit 1
                         fi
                         
@@ -106,7 +91,7 @@ pipeline {
                         
                         if [ $i -eq 30 ]; then
                             echo "Backend failed to start within timeout. Container logs:"
-                            docker logs backend
+                            docker logs app
                             exit 1
                         fi
                         
@@ -127,14 +112,13 @@ pipeline {
         failure {
             echo 'Pipeline failed! Cleaning up...'
             sh '''
-                docker stop backend postgres || true
-                docker rm backend postgres || true
+                docker stop app postgres || true
+                docker rm app postgres || true
                 docker network rm ${NETWORK_NAME} || true
                 docker system prune -f
             '''
         }
         always {
-            // Only clean up Docker system, not the containers
             sh 'docker system prune -f'
         }
     }
