@@ -5,8 +5,9 @@ pipeline {
         DOCKER_IMAGE = 'agents-of-revature-backend'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DB_NAME = 'jenkinsdb'
-        DB_USERNAME = 'jenkins_admin'
-        DB_PASSWORD = 'your_secure_password_here'
+        SPRING_DATASOURCE_URL = 'jdbc:postgresql://postgres:5432/jenkinsdb'
+        SPRING_DATASOURCE_USERNAME = 'jenkins_admin'
+        SPRING_DATASOURCE_PASSWORD = 'your_secure_password_here'
         NETWORK_NAME = 'app-network'
         BACKEND_PORT = '8081'
         CORS_ALLOWED_ORIGINS = 'http://localhost:8082,http://jenkins-ec2:8082,http://54.167.50.190:8080,http://54.167.50.190:8082'
@@ -55,8 +56,8 @@ pipeline {
                         --name postgres \
                         --network ${NETWORK_NAME} \
                         -e POSTGRES_DB=${DB_NAME} \
-                        -e POSTGRES_USER=${DB_USERNAME} \
-                        -e POSTGRES_PASSWORD=${DB_PASSWORD} \
+                        -e POSTGRES_USER=${SPRING_DATASOURCE_USERNAME} \
+                        -e POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
                         -p 5432:5432 \
                         postgres:14.18
 
@@ -72,9 +73,9 @@ pipeline {
                         -p ${BACKEND_PORT}:8081 \
                         -e SPRING_PROFILES_ACTIVE=prod \
                         -e SERVER_PORT=8081 \
-                        -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME} \
-                        -e DB_USERNAME=${DB_USERNAME} \
-                        -e DB_PASSWORD=${DB_PASSWORD} \
+                        -e SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL} \
+                        -e SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME} \
+                        -e SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD} \
                         -e CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS} \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
 
