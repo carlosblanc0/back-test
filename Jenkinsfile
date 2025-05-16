@@ -39,10 +39,18 @@ pipeline {
             steps {
                 sh 'echo "Deploying the application..."'
                 sh '''
-                    # Create network if it doesn't exist
-                    docker network create ${NETWORK_NAME} || true
-
+                    # Clean up existing containers and network
+                    echo "Cleaning up existing containers and network..."
+                    docker stop postgres app || true
+                    docker rm postgres app || true
+                    docker network rm ${NETWORK_NAME} || true
+                    
+                    # Create network
+                    echo "Creating network..."
+                    docker network create ${NETWORK_NAME}
+                    
                     # Run PostgreSQL container
+                    echo "Starting PostgreSQL..."
                     docker run -d \
                         --name postgres \
                         --network ${NETWORK_NAME} \
@@ -57,6 +65,7 @@ pipeline {
                     sleep 10
 
                     # Run the application container
+                    echo "Starting application..."
                     docker run -d \
                         --name app \
                         --network ${NETWORK_NAME} \
