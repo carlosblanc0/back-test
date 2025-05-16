@@ -101,7 +101,7 @@ pipeline {
                         # Try to connect to the application using the signup endpoint
                         if curl -s -f -X POST \
                             -H "Content-Type: application/json" \
-                            -d '{"username":"testuser@mail","password":"T@est123!"}' \
+                            -d \'{"username":"testuser@mail","password":"T@est123!"}\' \
                             http://localhost:${BACKEND_PORT}/auth/signup > /dev/null; then
                             echo "Backend is ready!"
                             break
