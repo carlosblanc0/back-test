@@ -5,12 +5,12 @@ pipeline {
         DOCKER_IMAGE = 'agents-of-revature-backend'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DB_NAME = 'jenkinsdb'
-        SPRING_DATASOURCE_URL = 'jdbc:postgresql://postgres:5432/jenkinsdb'
+        SPRING_DATASOURCE_URL = 'jdbc:postgresql://db:5432/jenkinsdb'
         SPRING_DATASOURCE_USERNAME = 'jenkins_admin'
         SPRING_DATASOURCE_PASSWORD = 'your_secure_password_here'
         NETWORK_NAME = 'app-network'
         BACKEND_PORT = '8081'
-        CORS_ALLOWED_ORIGINS = 'http://localhost:8082,http://jenkins-ec2:8082,http://54.167.50.190:8080,http://54.167.50.190:8082'
+        CORS_ALLOWED_ORIGINS = 'http://frontend:8082,http://localhost:8082'
     }
 
     stages {
@@ -42,8 +42,8 @@ pipeline {
                 sh '''
                     # Clean up existing containers and network
                     echo "Cleaning up existing containers and network..."
-                    docker stop postgres app || true
-                    docker rm postgres app || true
+                    docker stop db app || true
+                    docker rm db app || true
                     docker network rm ${NETWORK_NAME} || true
                     
                     # Create network
@@ -53,7 +53,7 @@ pipeline {
                     # Run PostgreSQL container
                     echo "Starting PostgreSQL..."
                     docker run -d \
-                        --name postgres \
+                        --name db \
                         --network ${NETWORK_NAME} \
                         -e POSTGRES_DB=${DB_NAME} \
                         -e POSTGRES_USER=${SPRING_DATASOURCE_USERNAME} \
@@ -123,8 +123,8 @@ pipeline {
         failure {
             echo 'Pipeline failed! Cleaning up...'
             sh '''
-                docker stop app postgres || true
-                docker rm app postgres || true
+                docker stop app db || true
+                docker rm app db || true
                 docker network rm ${NETWORK_NAME} || true
                 docker system prune -f
             '''
