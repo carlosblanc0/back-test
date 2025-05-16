@@ -86,7 +86,7 @@ pipeline {
                     # Wait for backend to be ready
                     echo "Waiting for backend to be ready..."
                     for i in $(seq 1 30); do
-                        echo "Attempt $i: Checking backend health..."
+                        echo "Attempt $i: Checking backend status..."
                         # Check if container is running
                         if ! docker ps | grep -q app; then
                             echo "Backend container is not running. Checking logs:"
@@ -94,15 +94,8 @@ pipeline {
                             exit 1
                         fi
                         
-                        # Show container logs for debugging
-                        echo "Container logs:"
-                        docker logs --tail 20 app
-                        
-                        # Try to connect to the application using the signup endpoint
-                        if curl -s -f -X POST \
-                            -H "Content-Type: application/json" \
-                            -d \'{"username":"testuser@mail","password":"T@est123!"}\' \
-                            http://localhost:${BACKEND_PORT}/auth/signup > /dev/null; then
+                        # Check if application has started successfully
+                        if docker logs app | grep -q "Started AgentsOfRevatureApplication"; then
                             echo "Backend is ready!"
                             break
                         fi
