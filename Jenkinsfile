@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'agents-of-revature-backend'
         DOCKER_TAG = "${BUILD_NUMBER}"
         DB_NAME = 'jenkinsdb'
-        DB_USER = 'jenkins_admin'
+        DB_USERNAME = 'jenkins_admin'
         DB_PASSWORD = 'your_secure_password_here'
         NETWORK_NAME = 'app-network'
         BACKEND_PORT = '8081'
@@ -55,7 +55,7 @@ pipeline {
                         --name postgres \
                         --network ${NETWORK_NAME} \
                         -e POSTGRES_DB=${DB_NAME} \
-                        -e POSTGRES_USER=${DB_USER} \
+                        -e POSTGRES_USER=${DB_USERNAME} \
                         -e POSTGRES_PASSWORD=${DB_PASSWORD} \
                         -p 5432:5432 \
                         postgres:14.18
@@ -73,8 +73,8 @@ pipeline {
                         -e SPRING_PROFILES_ACTIVE=prod \
                         -e SERVER_PORT=8081 \
                         -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME} \
-                        -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
-                        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+                        -e DB_USERNAME=${DB_USERNAME} \
+                        -e DB_PASSWORD=${DB_PASSWORD} \
                         -e CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS} \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
 

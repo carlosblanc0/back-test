@@ -10,4 +10,4 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8081
-ENTRYPOINT ["java", "-Dserver.port=8081", "-jar", "app.jar"] 
+ENTRYPOINT ["java", "-Dserver.port=8081", "-Dspring.profiles.active=prod", "-Dlogging.level.org.springframework.security=DEBUG", "-Dlogging.level.com.anonymousibex.Agents.of.Revature=DEBUG", "-jar", "app.jar"] 
